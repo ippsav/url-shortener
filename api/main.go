@@ -1,7 +1,11 @@
 package main
 
 import (
+	"main/routes"
 	"main/store"
+	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 func main() {
@@ -16,5 +20,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	muxRouter := mux.NewRouter()
+	routes.RegisterUserRoutes(muxRouter)
 
+	if err := http.ListenAndServe(":7000", muxRouter); err != nil {
+		panic(err)
+	}
 }

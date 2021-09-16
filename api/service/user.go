@@ -1,7 +1,6 @@
 package service
 
 import (
-	"database/sql"
 	"errors"
 	"main/models"
 	"main/repository"
@@ -17,12 +16,12 @@ var (
 type UserService struct {
 }
 
-func NewUserService(db *sql.DB) *UserService {
+func NewUserService() *UserService {
 	return &UserService{}
 }
 
 func (us *UserService) Validate(u *models.User) error {
-	if u.Email == "" || u.PasswordHash == "" {
+	if utils.IsEmailValid(u.Email) || u.PasswordHash == "" {
 		return errors.New("Invalid value for email or password\n")
 	}
 	return nil

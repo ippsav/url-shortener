@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"os"
 	"time"
+	"url-shortner/store/mysql"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/rs/zerolog"
@@ -35,5 +36,15 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("Could not ping the database")
 	}
+	log.Info().Msg("Connected to database")
+
+	//Creating mysql store
+	store := mysql.Store{DB: db}
+
+	// Create users table
+	if err := store.CreateUsersTable(ctx); err != nil {
+		log.Fatal().Err(err).Msg("Could not create the users table")
+	}
+	log.Info().Msg("Users table is set")
 
 }

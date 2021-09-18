@@ -12,6 +12,7 @@ import (
 type userHandlerService interface {
 	CreateUser(context.Context, string, string) (*domain.User, error)
 	FindUser(context.Context, string, string) (*domain.User, error)
+	CheckUserExists(context.Context, string) (bool, error)
 }
 
 type UserHandler struct {
@@ -40,6 +41,19 @@ func (us *UserHandler) CreateUser(rw http.ResponseWriter, r *http.Request) {
 		rw.Write([]byte("Invalid content type"))
 		return
 	}
+	ok, err := us.Service.CheckUserExists(ctx, userInput.Email)
+	if err != nil {
+		us.Log.Fatal().Err(err).Msg("create user Error")
+		rw.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if ok {
+		us.Log.Info().Msg("user exists in database")
+		rw.WriteHeader(http.StatusBadRequest)
+		rw.Write([]byte("email already taken"))
+		return
+	}
+
 	u, err := us.Service.CreateUser(ctx, userInput.Email, userInput.Password)
 	if err != nil {
 		us.Log.Fatal().Err(err).Msg("create user Error")

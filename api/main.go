@@ -3,10 +3,15 @@ package main
 import (
 	"context"
 	"database/sql"
+	"net/http"
 	"os"
 	"time"
+	"url-shortner/routes"
+	"url-shortner/service/user"
 	"url-shortner/store/mysql"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/rs/zerolog"
 )
@@ -39,7 +44,7 @@ func main() {
 	log.Info().Msg("Connected to database")
 
 	//Creating mysql store
-	store := mysql.Store{DB: db}
+	store := &mysql.Store{DB: db}
 
 	// Create users table
 	if err := store.CreateUsersTable(ctx); err != nil {
@@ -47,4 +52,45 @@ func main() {
 	}
 	log.Info().Msg("Users table is set")
 
+	//Setting chi router
+	r := chi.NewMux()
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.RequestID)
+	r.Use(middlewareLogger(log))
+
+	us := &user.Service{Store: store}
+	uh := &routes.UserHandler{Service: us, Log: &log}
+
+	//Api Status
+	r.Get("/status", func(rw http.ResponseWriter, r *http.Request) {
+		rw.WriteHeader(http.StatusOK)
+		rw.Write([]byte("Server running"))
+	})
+	//User Routes
+	r.Post("/users", uh.CreateUser)
+	r.Get("/users", uh.FindUser)
+	// Serving mux router
+	log.Info().Msg("server running on port 7000")
+	if err := http.ListenAndServe(":7000", r); err != nil {
+		log.Fatal().Err(err)
+	}
+}
+
+func middlewareLogger(log zerolog.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		fn := func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			ctx = context.WithValue(ctx, "logger", log)
+			r = r.WithContext(ctx)
+
+			log.Info().
+				Str("remote_ip", r.RemoteAddr).
+				Str("request_id", middleware.GetReqID(ctx)).
+				Msg("Request Received")
+
+			next.ServeHTTP(w, r)
+		}
+		return http.HandlerFunc(fn)
+	}
 }

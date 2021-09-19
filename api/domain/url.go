@@ -16,7 +16,7 @@ type Url struct {
 
 func (u *Url) Validate() bool {
 	chkUrl, err := url.ParseRequestURI(u.RedirectTo)
-	if err != nil || !strings.Contains(chkUrl.Host, ".") {
+	if err != nil && !strings.Contains(chkUrl.Host, ".") {
 		return false
 	}
 	return true

@@ -56,7 +56,7 @@ func (s *Store) FindUser(ctx context.Context, email string) (*domain.User, error
 }
 
 func (s *Store) CheckUserExists(ctx context.Context, email string) (bool, error) {
-	st, err := s.DB.PrepareContext(ctx, "SELECT EXISTS (SELECT * FROM users WHERE email=?)")
+	st, err := s.DB.PrepareContext(ctx, "SELECT EXISTS (SELECT id FROM users WHERE email=?)")
 	if err != nil {
 		return false, errors.Wrap(err, "could not prepare select statement")
 	}

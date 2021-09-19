@@ -22,7 +22,7 @@ func (u *User) Validate() bool {
 }
 
 func (u *User) HashPassword(password string) error {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 8)
 	if err != nil {
 		return errors.Wrap(err, "Could not hash the password")
 	}

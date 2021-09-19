@@ -86,6 +86,15 @@ func (us *UserHandler) FindUser(rw http.ResponseWriter, r *http.Request) {
 		rw.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	cookie := &http.Cookie{
+		Name:     "qid",
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		Value:    u.ID,
+		MaxAge:   6000,
+	}
+	http.SetCookie(rw, cookie)
 	rw.WriteHeader(http.StatusOK)
 	json.NewEncoder(rw).Encode(u)
 }

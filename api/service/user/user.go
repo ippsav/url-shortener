@@ -20,11 +20,16 @@ type Service struct {
 }
 
 func (s *Service) CreateUser(ctx context.Context, email, password string) (*domain.User, error) {
-	u := &domain.User{}
-	u.Email = email
-	u.ID = uuid.NewString()
-	u.CreatedAt = time.Now()
-	u.UpdatedAt = time.Now()
+	u := &domain.User{
+		ID:        uuid.NewString(),
+		Email:     email,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	ok := u.Validate()
+	if !ok {
+		return nil, errors.New("wrong email format")
+	}
 	if err := u.HashPassword(password); err != nil {
 		return nil, err
 	}
@@ -36,10 +41,7 @@ func (s *Service) CreateUser(ctx context.Context, email, password string) (*doma
 }
 func (s *Service) CheckUserExists(ctx context.Context, email string) (bool, error) {
 	ok, err := s.Store.CheckUserExists(ctx, email)
-	if err != nil {
-		return false, err
-	}
-	return ok, nil
+	return ok, err
 }
 
 func (s *Service) FindUser(ctx context.Context, email, password string) (*domain.User, error) {

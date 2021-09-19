@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 	"url-shortner/routes"
+	"url-shortner/service/url"
 	"url-shortner/service/user"
 	"url-shortner/store/mysql"
 
@@ -50,7 +51,13 @@ func main() {
 	if err := store.CreateUsersTable(ctx); err != nil {
 		log.Fatal().Err(err).Msg("Could not create the users table")
 	}
-	log.Info().Msg("Users table is set")
+	log.Info().Msg("users table is set")
+
+	// Create urls table
+	if err := store.CreateUrlsTable(ctx); err != nil {
+		log.Fatal().Err(err).Msg("Could not create the urls table")
+	}
+	log.Info().Msg("urls table is set")
 
 	//Setting chi router
 	r := chi.NewMux()
@@ -58,9 +65,12 @@ func main() {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.RequestID)
 	r.Use(middlewareLogger(log))
-
+	//Services
 	us := &user.Service{Store: store}
+	urs := &url.Service{Store: store}
+	//Handlers
 	uh := &routes.UserHandler{Service: us, Log: &log}
+	urh := &routes.UrlHandler{Service: urs, Log: &log}
 
 	//Api Status
 	r.Get("/status", func(rw http.ResponseWriter, r *http.Request) {
@@ -70,6 +80,10 @@ func main() {
 	//User Routes
 	r.Post("/users", uh.CreateUser)
 	r.Get("/users", uh.FindUser)
+	r.Route("/urls", func(r chi.Router) {
+		r.Use(authMiddleware())
+		r.Post("/", urh.CreateUrl)
+	})
 	// Serving mux router
 	log.Info().Msg("server running on port 7000")
 	if err := http.ListenAndServe(":7000", r); err != nil {
@@ -77,9 +91,26 @@ func main() {
 	}
 }
 
+func authMiddleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		fn := func(rw http.ResponseWriter, r *http.Request) {
+			cookie, err := r.Cookie("qid")
+			if err != nil {
+				rw.WriteHeader(http.StatusForbidden)
+				return
+			}
+			ctx := r.Context()
+			ctx = context.WithValue(ctx, "userID", cookie.Value)
+			r = r.WithContext(ctx)
+			next.ServeHTTP(rw, r)
+		}
+		return http.HandlerFunc(fn)
+	}
+}
+
 func middlewareLogger(log zerolog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		fn := func(w http.ResponseWriter, r *http.Request) {
+		fn := func(rw http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 			ctx = context.WithValue(ctx, "logger", log)
 			r = r.WithContext(ctx)
@@ -89,7 +120,7 @@ func middlewareLogger(log zerolog.Logger) func(http.Handler) http.Handler {
 				Str("request_id", middleware.GetReqID(ctx)).
 				Msg("Request Received")
 
-			next.ServeHTTP(w, r)
+			next.ServeHTTP(rw, r)
 		}
 		return http.HandlerFunc(fn)
 	}

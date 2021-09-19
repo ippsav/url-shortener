@@ -54,7 +54,7 @@ func (uh *UrlHandler) CreateUrl(rw http.ResponseWriter, r *http.Request) {
 	}
 	u, err := uh.Service.CreateUrl(ctx, ui.Name, ui.RedirectTo)
 	if err != nil {
-		uh.Log.Fatal().Err(err).Msg("could not create url")
+		uh.Log.Warn().Err(err).Msg("could not create url")
 		rw.WriteHeader(http.StatusInternalServerError)
 		return
 	}

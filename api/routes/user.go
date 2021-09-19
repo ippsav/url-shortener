@@ -43,7 +43,7 @@ func (us *UserHandler) CreateUser(rw http.ResponseWriter, r *http.Request) {
 	}
 	ok, err := us.Service.CheckUserExists(ctx, userInput.Email)
 	if err != nil {
-		us.Log.Fatal().Err(err).Msg("create user Error")
+		us.Log.Warn().Err(err).Msg("create user Error")
 		rw.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -56,7 +56,7 @@ func (us *UserHandler) CreateUser(rw http.ResponseWriter, r *http.Request) {
 
 	u, err := us.Service.CreateUser(ctx, userInput.Email, userInput.Password)
 	if err != nil {
-		us.Log.Fatal().Err(err).Msg("create user Error")
+		us.Log.Warn().Err(err).Msg("create user Error")
 		rw.WriteHeader(http.StatusInternalServerError)
 		return
 	}

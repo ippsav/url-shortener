@@ -2,6 +2,7 @@ package domain
 
 import (
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -14,8 +15,8 @@ type Url struct {
 }
 
 func (u *Url) Validate() bool {
-	_, err := url.ParseRequestURI(u.RedirectTo)
-	if err != nil {
+	chkUrl, err := url.ParseRequestURI(u.RedirectTo)
+	if err != nil || strings.Contains(chkUrl.Host, ".") {
 		return false
 	}
 	return true

@@ -49,7 +49,8 @@ func (s *Store) FindUser(ctx context.Context, email string) (*domain.User, error
 		return nil, errors.Wrap(err, "could not prepare select statement")
 	}
 
-	if err = st.QueryRowContext(ctx, email).Scan(&u.ID, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt); err != nil {
+	err = st.QueryRowContext(ctx, email).Scan(&u.ID, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
+	if err != nil {
 		return nil, errors.Wrap(err, "could not select row from users table")
 	}
 	return u, nil

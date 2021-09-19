@@ -82,7 +82,7 @@ func (us *UserHandler) FindUser(rw http.ResponseWriter, r *http.Request) {
 	}
 	u, err := us.Service.FindUser(ctx, userInput.Email, userInput.Password)
 	if err != nil {
-		us.Log.Fatal().Err(err).Msg("create user Error")
+		us.Log.Warn().Err(err).Msg("could not find user")
 		rw.WriteHeader(http.StatusInternalServerError)
 		return
 	}

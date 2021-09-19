@@ -10,11 +10,11 @@ import (
 func (s *Store) CreateUrlsTable(ctx context.Context) error {
 	table := `CREATE TABLE IF NOT EXISTS urls(
    id INT PRIMARY KEY AUTO_INCREMENT,
-   name VARCHAR(16) UNIQUE,
-   redirectTo  VARCHAR(25) UNIQUE,
+   name VARCHAR(16) ,
+   redirectTo  VARCHAR(25) ,
    ownerID BINARY(16),
    createdAt DATETIME,
-   UNIQUE(name,redirectTo),
+   UNIQUE(name,redirectTo,ownerID),
    FOREIGN KEY(ownerID) REFERENCES users(id)
   )`
 	_, err := s.DB.ExecContext(ctx, table)

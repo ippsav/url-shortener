@@ -26,7 +26,7 @@ func (s *Service) CreateUrl(ctx context.Context, name, redirectTo string) (*doma
 		CreatedAt:  time.Now(),
 	}
 	ok := url.Validate()
-	if !ok {
+	if ok == false {
 		return nil, errors.New("bad url format")
 	}
 	url, err := s.Store.CreateUrl(ctx, url)

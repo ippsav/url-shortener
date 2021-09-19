@@ -10,7 +10,8 @@ import (
 type Store interface {
 	CreateUrl(context.Context, *domain.Url) (*domain.Url, error)
 	CheckUrlExists(context.Context, string, string, string) (bool, error)
-	GetUrl(context.Context, string, string) (*domain.Url, error)
+	GetUrlByID(context.Context, int64, string) (*domain.Url, error)
+	GetUrls(context.Context, int, string, time.Time) ([]domain.Url, error)
 }
 
 type Service struct {
@@ -41,8 +42,21 @@ func (s *Service) CheckUrlExists(ctx context.Context, name, redirectTo string) (
 	ok, err := s.Store.CheckUrlExists(ctx, name, redirectTo, ownerID)
 	return ok, err
 }
-func (s *Service) GetUrl(ctx context.Context, name string) (*domain.Url, error) {
+
+func (s *Service) GetUrlByID(ctx context.Context, id int64) (*domain.Url, error) {
 	ownerID := ctx.Value("userID").(string)
-	url, err := s.Store.GetUrl(ctx, name, ownerID)
+	url, err := s.Store.GetUrlByID(ctx, id, ownerID)
 	return url, err
+}
+
+func (s *Service) GetUrls(ctx context.Context, limit int, createdAt time.Time) ([]domain.Url, error) {
+	ownerID := ctx.Value("userID").(string)
+	if limit < 0 {
+		limit = 1
+	}
+	urls, err := s.Store.GetUrls(ctx, limit, ownerID, createdAt)
+	if err != nil {
+		return nil, err
+	}
+	return urls, nil
 }

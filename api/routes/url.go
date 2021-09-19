@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"time"
 	"url-shortner/domain"
 
 	"github.com/rs/zerolog"
@@ -12,7 +13,8 @@ import (
 type urlHandlerService interface {
 	CreateUrl(context.Context, string, string) (*domain.Url, error)
 	CheckUrlExists(context.Context, string, string) (bool, error)
-	GetUrl(context.Context, string) (*domain.Url, error)
+	GetUrlByID(context.Context, int64) (*domain.Url, error)
+	GetUrls(context.Context, int, time.Time) ([]domain.Url, error)
 }
 
 type UrlHandler struct {
@@ -20,13 +22,17 @@ type UrlHandler struct {
 	Log     *zerolog.Logger
 }
 
-type UserInput struct {
+type urlJsonFormat struct {
 	Name       string `json:"name"`
 	RedirectTo string `json:"redirectTo"`
 }
+type urlQueryArgs struct {
+	CreatedAt time.Time `json:"createdAt"`
+	Limit     int       `json:"limit"`
+}
 
 func (uh *UrlHandler) CreateUrl(rw http.ResponseWriter, r *http.Request) {
-	ui := &UserInput{}
+	ui := &urlJsonFormat{}
 	switch r.Header.Get("content-type") {
 	case "application/json":
 		err := json.NewDecoder(r.Body).Decode(ui)
@@ -60,4 +66,29 @@ func (uh *UrlHandler) CreateUrl(rw http.ResponseWriter, r *http.Request) {
 	}
 	rw.WriteHeader(http.StatusAccepted)
 	json.NewEncoder(rw).Encode(u)
+}
+
+func (uh *UrlHandler) GetUrls(rw http.ResponseWriter, r *http.Request) {
+	query := &urlQueryArgs{}
+	switch r.Header.Get("content-type") {
+	case "application/json":
+		err := json.NewDecoder(r.Body).Decode(query)
+		if err != nil {
+			uh.Log.Warn().Err(err).Msg("could not parse body")
+			rw.WriteHeader(http.StatusNotAcceptable)
+			rw.Write([]byte("could not parse body"))
+			return
+		}
+	default:
+		rw.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
+	ctx := r.Context()
+	urls, err := uh.Service.GetUrls(ctx, query.Limit, query.CreatedAt)
+	if err != nil {
+		rw.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	rw.WriteHeader(http.StatusOK)
+	json.NewEncoder(rw).Encode(urls)
 }

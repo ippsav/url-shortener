@@ -83,6 +83,7 @@ func main() {
 	r.Route("/urls", func(r chi.Router) {
 		r.Use(authMiddleware(us))
 		r.Post("/", urh.CreateUrl)
+		r.Get("/", urh.GetUrls)
 	})
 	// Serving mux router
 	log.Info().Msg("server running on port 7000")

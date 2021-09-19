@@ -7,11 +7,11 @@ import (
 )
 
 type Url struct {
-	ID         int64
-	Name       string
-	RedirectTo string
-	OwnerID    string
-	CreatedAt  time.Time
+	ID         int64     `json:"id"`
+	Name       string    `json:"name"`
+	RedirectTo string    `json:"redirectTo"`
+	OwnerID    string    `json:"ownerID"`
+	CreatedAt  time.Time `json:"createdAt"`
 }
 
 func (u *Url) Validate() bool {

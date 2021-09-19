@@ -81,7 +81,7 @@ func main() {
 	r.Post("/users", uh.CreateUser)
 	r.Get("/users", uh.FindUser)
 	r.Route("/urls", func(r chi.Router) {
-		r.Use(authMiddleware())
+		r.Use(authMiddleware(us))
 		r.Post("/", urh.CreateUrl)
 	})
 	// Serving mux router
@@ -91,7 +91,7 @@ func main() {
 	}
 }
 
-func authMiddleware() func(http.Handler) http.Handler {
+func authMiddleware(us *user.Service) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(rw http.ResponseWriter, r *http.Request) {
 			cookie, err := r.Cookie("qid")
@@ -100,6 +100,15 @@ func authMiddleware() func(http.Handler) http.Handler {
 				return
 			}
 			ctx := r.Context()
+			ok, err := us.Store.CheckUserExistsWithID(ctx, cookie.Value)
+			if err != nil {
+				rw.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			if !ok {
+				rw.WriteHeader(http.StatusForbidden)
+				return
+			}
 			ctx = context.WithValue(ctx, "userID", cookie.Value)
 			r = r.WithContext(ctx)
 			next.ServeHTTP(rw, r)

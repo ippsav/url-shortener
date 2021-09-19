@@ -66,3 +66,15 @@ func (s *Store) CheckUserExists(ctx context.Context, email string) (bool, error)
 	}
 	return ok == 1, nil
 }
+
+func (s *Store) CheckUserExistsWithID(ctx context.Context, id string) (bool, error) {
+	st, err := s.DB.PrepareContext(ctx, "SELECT EXISTS (SELECT id FROM users WHERE id=UUID_TO_BIN(?))")
+	if err != nil {
+		return false, errors.Wrap(err, "could not prepare select statement")
+	}
+	var ok int
+	if err := st.QueryRowContext(ctx, id).Scan(&ok); err != nil {
+		return false, errors.Wrap(err, "could not select from users table")
+	}
+	return ok == 1, nil
+}

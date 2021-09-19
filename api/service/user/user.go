@@ -13,6 +13,7 @@ type Store interface {
 	CreateUser(context.Context, *domain.User) (*domain.User, error)
 	FindUser(context.Context, string) (*domain.User, error)
 	CheckUserExists(context.Context, string) (bool, error)
+	CheckUserExistsWithID(context.Context, string) (bool, error)
 }
 
 type Service struct {

@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"database/sql"
+	"github.com/go-redis/redis/v8"
 	"net/http"
 	"os"
 	"time"
 	"url-shortner/routes"
 	"url-shortner/service/url"
 	"url-shortner/service/user"
+	credis "url-shortner/store/cache"
 	"url-shortner/store/mysql"
 
 	"github.com/go-chi/chi/v5"
@@ -59,6 +61,14 @@ func main() {
 	}
 	log.Info().Msg("urls table is set")
 
+	// create redis client
+	client := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "",
+		DB:       0,
+	})
+	client.FlushDB(ctx)
+	redisCache := credis.NewRedisCache(client)
 	//Setting chi router
 	r := chi.NewMux()
 	r.Use(middleware.Recoverer)
@@ -67,7 +77,7 @@ func main() {
 	r.Use(middlewareLogger(log))
 	//Services
 	us := &user.Service{Store: store}
-	urs := &url.Service{Store: store}
+	urs := &url.Service{Store: store, Cache: redisCache}
 	//Handlers
 	uh := &routes.UserHandler{Service: us, Log: &log}
 	urh := &routes.UrlHandler{Service: urs, Log: &log}

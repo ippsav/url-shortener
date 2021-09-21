@@ -3,6 +3,7 @@ package url
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 	"url-shortner/domain"
 )
@@ -18,7 +19,6 @@ type Store interface {
 type Cache interface {
 	Set(context.Context, string, []domain.Url, time.Duration) error
 	Get(context.Context, string) ([]domain.Url, error)
-	Del(context.Context, string) error
 }
 
 type Service struct {
@@ -64,35 +64,38 @@ func (s *Service) GetUrlByName(ctx context.Context, name string) (*domain.Url, e
 
 func (s *Service) GetUrls(ctx context.Context, limit int, createdAt time.Time) ([]domain.Url, error) {
 	ownerID := ctx.Value("userID").(string)
+	cacheCtx, cancel := context.WithCancel(context.Background())
 	if limit < 0 {
 		limit = 1
 	}
 	cachedUrls, err := s.Cache.Get(ctx, ownerID)
-	if err != nil {
-		return nil, err
-	}
+	fmt.Println("cached ", cachedUrls)
 	if len(cachedUrls) > 0 {
-		errorChan := make(chan error)
 		go func() {
-			urls, err := s.Store.GetUrls(ctx, limit, ownerID, cachedUrls[len(cachedUrls)-1].CreatedAt)
+			defer cancel()
+			urls, err := s.Store.GetUrls(cacheCtx, limit, ownerID, cachedUrls[len(cachedUrls)-1].CreatedAt)
 			if err != nil || len(urls) == 0 {
 				return
 			}
-			err = s.Cache.Set(ctx, ownerID, urls, time.Hour)
-			errorChan <- err
+			err = s.Cache.Set(cacheCtx, ownerID, urls, time.Hour)
+			fmt.Println(err)
 		}()
-		err := <-errorChan
-		if err != nil {
-			return nil, err
-		}
 		return cachedUrls, nil
 	}
 	urls, err := s.Store.GetUrls(ctx, limit, ownerID, createdAt)
+	fmt.Println("from db not cached", urls)
 	if err != nil {
 		return nil, err
 	}
 	go func() {
-		s.Cache.Set(ctx, ownerID, urls, time.Hour)
+		defer cancel()
+		if len(urls) != 0 {
+			nextUrls, err := s.Store.GetUrls(cacheCtx, limit, ownerID, urls[len(urls)-1].CreatedAt)
+			err = s.Cache.Set(cacheCtx, ownerID, nextUrls, time.Hour)
+			fmt.Println(err)
+			cachedUrls, err := s.Cache.Get(ctx, ownerID)
+			fmt.Println("new cached", cachedUrls)
+		}
 	}()
 	return urls, nil
 }

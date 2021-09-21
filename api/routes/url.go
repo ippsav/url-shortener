@@ -7,6 +7,7 @@ import (
 	"time"
 	"url-shortner/domain"
 
+	"github.com/go-chi/chi"
 	"github.com/rs/zerolog"
 )
 
@@ -15,6 +16,7 @@ type urlHandlerService interface {
 	CheckUrlExists(context.Context, string, string) (bool, error)
 	GetUrlByID(context.Context, int64) (*domain.Url, error)
 	GetUrls(context.Context, int, time.Time) ([]domain.Url, error)
+	GetUrlByName(context.Context, string) (*domain.Url, error)
 }
 
 type UrlHandler struct {
@@ -66,6 +68,11 @@ func (uh *UrlHandler) CreateUrl(rw http.ResponseWriter, r *http.Request) {
 	}
 	rw.WriteHeader(http.StatusAccepted)
 	json.NewEncoder(rw).Encode(u)
+}
+
+func (uh *UrlHandler) GetUrl(rw http.ResponseWriter, r *http.Request) {
+	uName := chi.URLParam(r, "name")
+	_ = uName
 }
 
 func (uh *UrlHandler) GetUrls(rw http.ResponseWriter, r *http.Request) {

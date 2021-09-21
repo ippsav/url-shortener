@@ -56,11 +56,23 @@ func (s *Store) GetUrlByID(ctx context.Context, id int64, ownerID string) (*doma
 		return nil, errors.Wrap(err, "could not prepare select statement")
 	}
 	url := &domain.Url{}
-	err = st.QueryRowContext(ctx, id).Scan(&url.ID, &url.Name, &url.RedirectTo, &url.OwnerID, &url.CreatedAt)
+	err = st.QueryRowContext(ctx, id, ownerID).Scan(&url.ID, &url.Name, &url.RedirectTo, &url.OwnerID, &url.CreatedAt)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not select from urls")
 	}
 	return url, nil
+}
+func (s *Store) GetUrlByName(ctx context.Context, name, ownerID string) (*domain.Url, error) {
+	st, err := s.DB.PrepareContext(ctx, "SELECT id,name,redirectTo,BIN_TO_UUID(ownerID),createdAt FROM urls WHERE name=? AND ownerID=UUID_TO_BIN(?)")
+	if err != nil {
+		return nil, errors.Wrap(err, "could not prepare select statement")
+	}
+	u := &domain.Url{}
+	err = st.QueryRowContext(ctx, name, ownerID).Scan(&u.ID, &u.Name, &u.RedirectTo, &u.OwnerID, &u.CreatedAt)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not select from urls")
+	}
+	return u, nil
 }
 
 func (s *Store) GetUrls(ctx context.Context, limit int, ownerID string, createdAt time.Time) ([]domain.Url, error) {
@@ -74,7 +86,7 @@ func (s *Store) GetUrls(ctx context.Context, limit int, ownerID string, createdA
 	if err != nil {
 		return nil, errors.Wrap(err, "could not select from urls")
 	}
-	urls := []domain.Url{}
+	urls := make([]domain.Url, 0)
 	for rows.Next() {
 		u := &domain.Url{}
 		err := rows.Scan(&u.ID, &u.Name, &u.RedirectTo, &u.OwnerID, &u.CreatedAt)

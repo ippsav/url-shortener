@@ -8,6 +8,11 @@ services:
     ports:
       - "7200:3306"
 
+  redis-db:
+    image: redis:6.2.5
+    ports:
+      - "6379:6379"
+
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     ports:

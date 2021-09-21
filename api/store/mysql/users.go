@@ -20,7 +20,7 @@ func (s *Store) CreateUsersTable(ctx context.Context) error {
 	return err
 }
 
-//SELECT BIN_TO_UUID(id),createdAt,updatedAt FROM users where email='?'
+// CreateUser SELECT BIN_TO_UUID(id),createdAt,updatedAt FROM users where email='?'
 func (s *Store) CreateUser(ctx context.Context, u *domain.User) (*domain.User, error) {
 	st, err := s.DB.PrepareContext(ctx, "INSERT INTO users(id,email,passwordHash,createdAt,updatedAt) values(UUID_TO_BIN(?),?,?,?,?);")
 	if err != nil {
@@ -30,7 +30,7 @@ func (s *Store) CreateUser(ctx context.Context, u *domain.User) (*domain.User, e
 	if err != nil {
 		return nil, errors.Wrap(err, "could not insert row into users table")
 	}
-	// getting the user data back since mysql doesn t support returning keyword
+	// getting the user data back since mysql doesn't support returning keyword
 	// st, err = s.DB.PrepareContext(ctx, "SELECT BIN_TO_UUID(id),createdAt,updatedAt FROM users where email=?")
 	// if err != nil {
 	// 	return nil, errors.Wrap(err, "could not prepare select statement")
